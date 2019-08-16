@@ -6,11 +6,6 @@ Created on Tue Aug 13 11:33:46 2019
 @author: Stefan Fritsch
 """
 
-# import os
-# import re
-# import datetime
-# import subprocess
-
 import yaml
 
 from cephfs import cephfs_create_snapshot, cephfs_list_snapshots, cephfs_delete_old_snapshots

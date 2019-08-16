@@ -10,7 +10,7 @@ def rbd_create_snapshot(_location, _prefix):
     now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
     snap_name = _prefix + "_-_" + now
     command = f'rbd snap create {_location}@{snap_name}'
-
+    
     try:
         subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     except OSError:
@@ -19,18 +19,16 @@ def rbd_create_snapshot(_location, _prefix):
         print(ve)
     else:
         print (f'Successfully created the snapshot {snap_name}')
-        
-    return path
 
 
 def rbd_list_snapshots(_location, _prefix):
     command = f'rbd snap ls {_location}'
     all_snaps = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
-
+    
     prefix_snaps = [f 
                     for f in all_snaps 
                     if re.match(_prefix, f)]
-
+    
     return prefix_snaps
 
 

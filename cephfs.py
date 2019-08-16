@@ -20,8 +20,6 @@ def cephfs_create_snapshot(_location, _prefix):
         print(ve)
     else:
         print ("Successfully created the directory %s " % path)
-        
-    return path
 
 
 def cephfs_list_snapshots(_location, _prefix):
