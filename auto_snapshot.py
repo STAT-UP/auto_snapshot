@@ -6,27 +6,18 @@ Created on Tue Aug 13 11:33:46 2019
 @author: Stefan Fritsch
 """
 
+# import os
+# import re
+# import datetime
+# import subprocess
+
 import yaml
-import os
-import re
-import datetime
 import apscheduler.schedulers.blocking
 import apscheduler.triggers.cron
-import subprocess
 
 from cephfs import cephfs_create_snapshot, cephfs_list_snapshots, cephfs_delete_old_snapshots
 from rbd import rbd_create_snapshot, rbd_list_snapshots, rbd_delete_old_snapshots
-
-def debug_title(_text):
-    print("####################################################################")
-    print("## " + _text)
-    print("####################################################################")
-
-
-def debug_heartbeat():
-    now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
-    
-    print(f"[{now}] Still alive")
+from debug import debug_title, debug_heartbeat
 
 
 def cronjob(_source, _prefix, _retain):
@@ -53,7 +44,7 @@ source_definitions = config["sources"]
 scheduler = apscheduler.schedulers.blocking.BlockingScheduler()
 
 for schedule in schedules:
-    sources = schedule["source"]
+    sources = schedule["sources"]
     
     for source in sources:
         trigger = apscheduler.triggers.cron.CronTrigger(**(schedule["cron"]))
