@@ -23,11 +23,14 @@ def rbd_create_snapshot(_location, _prefix):
 
 def rbd_list_snapshots(_location, _prefix):
     command = f'rbd snap ls {_location}'
-    all_snaps = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
+    all_snaps_cmd = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).stdout.read()
+    all_snaps_output = all_snaps_cmd.decode("utf-8").split("\n")
     
-    prefix_snaps = [f 
-                    for f in all_snaps 
-                    if re.match(_prefix, f)]
+    prefix_snaps_full = [f 
+                         for f in all_snaps_output
+                         if re.search(_prefix, f)]
+    prefix_snaps = [re.search(fr'{_prefix}[^\s]*', p).group(0) 
+                    for p in prefix_snaps_full]
     
     return prefix_snaps
 
