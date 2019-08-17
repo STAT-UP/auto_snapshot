@@ -60,3 +60,10 @@ def cephfs_delete_old_snapshots(_location, _prefix, _n_retain):
         else:
             print ("Successfully deleted snapshot %s " % path)
 
+
+def cephfs_newest_snapshot_path(_location, _snapshot_prefix):
+    snaps = cephfs_list_snapshots(_location, _snapshot_prefix)
+    newest_snapshot = sorted(snaps, reverse = True)[0]
+    snapshot_path = os.path.join(_location, ".snap", newest_snapshot)
+    
+    return snapshot_path

@@ -13,22 +13,9 @@ import datetime
 import apscheduler.schedulers.blocking
 import apscheduler.triggers.cron
 import subprocess
+from cephfs import cephfs_newest_snapshot_path
+from debug import debug_title, debug_heartbeat
 
-def cephfs_list_snapshots(_dir, _prefix):
-    path = os.path.join(_dir, ".snap")
-    snapdirs = [f
-                for f in os.listdir(path)
-                if os.path.isdir(os.path.join(path, f))
-                    and re.match(_prefix, f)]
-    return snapdirs
-
-def cephfs_newest_snapshot_path(_source, _definition):
-    snapshots = cephfs_list_snapshots(_source["path"], _definition["snapshot_prefix"])
-    newest_snapshot = sorted(snaps, reverse = True)[0]
-    snapshot_path = os.path.join(_source["path"], ".snap", newest_snapshot)
-    
-    return snapshot_path
-    
 
 def rsync_transfer(_source, _definition, _additional_args = "--delete --progress"):
     rsync_skip_compress = '3fr/3g2/3gp/3gpp/7z/aac/ace/amr/apk/appx/appxbundle/arc/arj/arw/asf/avi/bz2/cab/cr2/crypt[5678]/dat/dcr/deb/dmg/drc/ear/erf/flac/flv/gif/gpg/gz/iiq/iso/jar/jp2/jpeg/jpg/k25/kdc/lz/lzma/lzo/m4[apv]/mef/mkv/mos/mov/mp[34]/mpeg/mp[gv]/msi/nef/oga/ogg/ogv/opus/orf/pef/png/qt/rar/rds/rpm/rw2/rzip/s7z/sfx/sr2/srf/svgz/t[gb]z/tlz/txz/vob/wim/wma/wmv/xlsx/xz/zip'

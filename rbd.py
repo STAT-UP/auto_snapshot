@@ -62,3 +62,48 @@ def rbd_delete_old_snapshots(_location, _prefix, _n_retain):
         else:
             print ("Successfully deleted snapshot %s " % snap)
 
+
+def rbd_mount_newest_snapshot(_location, _prefix, _mount_base = "/cephrbd"):
+    snaps = rbd_list_snapshots(_location, _prefix)
+    newest_snapshot = sorted(snaps, reverse = True)[0]
+    
+    ## protect snap
+    command = f'rbd snap protect {_location}@{newest_snapshot}'
+    subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
+    
+    ## clone snap
+    command = f'rbd clone {_location}@{newest_snapshot} {_location}_backup'
+    newest_snap_cmd = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
+    
+    ## map clone
+    command = f'rbd map {_location}_backup'
+    newest_snap_cmd = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).stdout.read()
+    newest_snap_device = newest_snap_cmd.decode("utf-8").strip()
+    
+    ## mount clone
+    mountpoint = os.path.join(_mount_base, _location)
+    os.makedirs(mountpoint, exist_ok = True)
+    command = f'mount {newest_snap_device} {mountpoint}'
+    subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
+    
+    return newest_snapshot
+
+
+def rbd_unmount_newest_snapshot(_location, _newest_snapshot, _mount_base = "/cephrbd"):
+    ## unmount clone
+    mountpoint = os.path.join(_mount_base, _location)
+    command = f'umount {mountpoint}'
+    subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
+    
+    ## unmap clone
+    command = f'rbd unmap {_location}_backup'
+    subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
+    
+    ## delete clone
+    command = f'rbd rm {_location}_backup'
+    subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
+    
+    ## unprotect snap
+    command = f'rbd snap unprotect {_location}@{_newest_snapshot}'
+    subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
+
