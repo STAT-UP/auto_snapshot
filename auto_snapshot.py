@@ -50,7 +50,7 @@ def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
     location = _source["location"]
     source_type = _source["type"]
     
-    logger = logging.getLogger(f"[{_prefix}][{_source}]")
+    logger = logging.getLogger(f"[{_prefix}][{location}]")
     logger.addHandler(stdout_handler)
     logger.setLevel(args.log_level)
 
