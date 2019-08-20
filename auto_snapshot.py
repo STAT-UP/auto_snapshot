@@ -29,6 +29,11 @@ parser.add_argument("-l", "--log-level",
                     dest = "log_level",
                     default = "INFO",
                     type = str)
+parser.add_argument("-c", "--config-file",
+                    help = "Where to look for the config yaml?",
+                    dest = "config_file",
+                    default = "config.yaml",
+                    type = str)
 
 args = parser.parse_args()
 
@@ -44,7 +49,10 @@ def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
     delete_old_snapshots = globals()[source_type + "_delete_old_snapshots"]
     
     create_snapshot(location, _prefix, _logger = logger)
-    mount_newest_snapshot(location, _prefix, _mount_location, _logger = logger)
+    
+    if _mount_newest:
+        mount_newest_snapshot(location, _prefix, _mount_location, _logger = logger)
+    
     delete_old_snapshots(location, _prefix, _retain, _logger = logger)
 
 ## The logger
@@ -52,7 +60,7 @@ with open('logging.config.yaml', 'r') as f:
     logging_config = yaml.safe_load(f.read())
     logging.config.dictConfig(logging_config)
 
-with open("config.yaml", 'r') as stream:
+with open(args.config_file, 'r') as stream:
     try:
         config = yaml.safe_load(stream)
     except yaml.YAMLError as exc:
