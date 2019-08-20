@@ -114,9 +114,8 @@ if args.heartbeat:
     beat_logger = logging.getLogger(" Heartbeat ")
     beat_logger.addHandler(stdout_handler)
     beat_logger.setLevel("DEBUG")
-    
-    print("beating")
-    scheduler.add_job(lambda _logger : (_logger.debug(""), print("badum")) ,
+
+    scheduler.add_job(lambda _logger : _logger.debug(""),
                     trigger,
                     kwargs = {"_logger": beat_logger})
 
