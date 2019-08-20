@@ -50,9 +50,11 @@ def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
     location = _source["location"]
     source_type = _source["type"]
     
-    logger = logging.getLogger("[_prefix][_source]")
+    logger = logging.getLogger(f"[{_prefix}][{_source}]")
     logger.addHandler(stdout_handler)
     logger.setLevel(args.log_level)
+
+    logger.info("Started")
     
     create_snapshot = globals()[source_type + "_create_snapshot"]
     mount_newest_snapshot = globals()[source_type + "_mount_newest_snapshot"]
