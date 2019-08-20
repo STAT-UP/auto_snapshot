@@ -42,7 +42,8 @@ def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
     location = _source["location"]
     source_type = _source["type"]
     
-    logger = main_logger.getLogger("[_prefix][_source]")
+    logger = logging.getLogger("[_prefix][_source]")
+    logger.addHandler(stderr_handler)
     
     create_snapshot = globals()[source_type + "_create_snapshot"]
     mount_newest_snapshot = globals()[source_type + "_mount_newest_snapshot"]
@@ -56,11 +57,10 @@ def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
     delete_old_snapshots(location, _prefix, _retain, _logger = logger)
 
 ## The logger
-with open('logging.config.yaml', 'r') as f:
-    logging_config = yaml.safe_load(f.read())
-    logging.config.dictConfig(logging_config)
-main_logger = logging.getLogger("MainLogger")
-main_logger.setLevel(getattr(logging, args.log_level))
+formatter = logging.Formatter('[%(asctime)s][%(levelname)s]%(name)s %(message)s')
+stderr_handler = logging.StreamHandler()
+stderr_handler.setFormatter(formatter)
+stderr_handler.setLevel(args.log_level)
 
 with open(args.config_file, 'r') as stream:
     try:
@@ -94,7 +94,8 @@ for schedule_name, schedule in schedules.items():
 
 if args.heartbeat:
     trigger = apscheduler.triggers.cron.CronTrigger(second = 1)
-    beat_logger = logging.getLogger("HeartbeatLogger")
+    beat_logger = logging.getLogger(" Heartbeat ")
+    beat_logger.addHandler(stderr_handler)
 
     print("beating")
     scheduler.add_job(lambda _logger : (_logger.debug(""), print("badum")) ,
@@ -102,4 +103,3 @@ if args.heartbeat:
                     kwargs = {"_logger": beat_logger})
 
 scheduler.start()
-    
