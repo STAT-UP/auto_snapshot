@@ -31,8 +31,7 @@ def cephfs_list_snapshots(_location, _prefix):
 
 
 def cephfs_delete_old_snapshots(_location, _prefix, _n_retain, _logger):
-    _logger.info("cephfs_delete_old_snapshots: Deleting snapshots")
-    
+    _logger.debug("cephfs_delete_old_snapshots started")    
     snaps = cephfs_list_snapshots(_location, _prefix)
     
     _logger.debug("All snapshots: ")
@@ -45,6 +44,8 @@ def cephfs_delete_old_snapshots(_location, _prefix, _n_retain, _logger):
     
     _logger.debug("We want to delete: ")
     _logger.debug(sorted_snaps)
+    
+    _logger.info(f"cephfs_delete_old_snapshots: Deleting {len(sorted_snaps)} snapshot(s)")
     
     for snap in sorted_snaps:
         try:
