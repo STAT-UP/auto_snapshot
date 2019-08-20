@@ -52,6 +52,7 @@ def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
     
     logger = logging.getLogger("[_prefix][_source]")
     logger.addHandler(stdout_handler)
+    logger.setLevel(args.log_level)
     
     create_snapshot = globals()[source_type + "_create_snapshot"]
     mount_newest_snapshot = globals()[source_type + "_mount_newest_snapshot"]
@@ -70,7 +71,6 @@ def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
 formatter = logging.Formatter('[%(asctime)s][%(levelname)s]%(name)s %(message)s')
 stdout_handler = logging.StreamHandler(stdout)
 stdout_handler.setFormatter(formatter)
-stdout_handler.setLevel(args.log_level)
 
 
 ##### The config #####
@@ -113,7 +113,8 @@ if args.heartbeat:
     trigger = apscheduler.triggers.cron.CronTrigger(second = 1)
     beat_logger = logging.getLogger(" Heartbeat ")
     beat_logger.addHandler(stdout_handler)
-
+    beat_logger.setLevel("DEBUG")
+    
     print("beating")
     scheduler.add_job(lambda _logger : (_logger.debug(""), print("badum")) ,
                     trigger,
