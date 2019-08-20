@@ -6,6 +6,8 @@ Created on Tue Aug 13 11:33:46 2019
 @author: Stefan Fritsch
 """
 
+##### Imports #####
+
 import os
 import logging
 import logging.config
@@ -17,6 +19,9 @@ from cephfs import cephfs_create_snapshot, cephfs_list_snapshots, cephfs_delete_
 from rbd import rbd_create_snapshot, rbd_list_snapshots, rbd_delete_old_snapshots, rbd_mount_newest_snapshot
 
 from argparse import ArgumentParser
+from sys import stdout
+
+##### Parse command line #####
 
 parser = ArgumentParser(description = "Create regular snapshots of volumes.")
 parser.add_argument("--heartbeat",
@@ -38,12 +43,15 @@ parser.add_argument("-c", "--config-file",
 
 args = parser.parse_args()
 
+
+##### Functions #####
+
 def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
     location = _source["location"]
     source_type = _source["type"]
     
     logger = logging.getLogger("[_prefix][_source]")
-    logger.addHandler(stderr_handler)
+    logger.addHandler(stdout_handler)
     
     create_snapshot = globals()[source_type + "_create_snapshot"]
     mount_newest_snapshot = globals()[source_type + "_mount_newest_snapshot"]
@@ -56,11 +64,16 @@ def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
     
     delete_old_snapshots(location, _prefix, _retain, _logger = logger)
 
-## The logger
+
+##### The logger #####
+
 formatter = logging.Formatter('[%(asctime)s][%(levelname)s]%(name)s %(message)s')
-stderr_handler = logging.StreamHandler()
-stderr_handler.setFormatter(formatter)
-stderr_handler.setLevel(args.log_level)
+stdout_handler = logging.StreamHandler(stdout)
+stdout_handler.setFormatter(formatter)
+stdout_handler.setLevel(args.log_level)
+
+
+##### The config #####
 
 with open(args.config_file, 'r') as stream:
     try:
@@ -68,6 +81,8 @@ with open(args.config_file, 'r') as stream:
     except yaml.YAMLError as exc:
         print(exc)
 
+
+##### Set the schedules #####
 
 schedules = config["schedules"]
 source_definitions = config["sources"]
@@ -92,10 +107,12 @@ for schedule_name, schedule in schedules.items():
                           })
 
 
+##### A heartbeat #####
+
 if args.heartbeat:
     trigger = apscheduler.triggers.cron.CronTrigger(second = 1)
     beat_logger = logging.getLogger(" Heartbeat ")
-    beat_logger.addHandler(stderr_handler)
+    beat_logger.addHandler(stdout_handler)
 
     print("beating")
     scheduler.add_job(lambda _logger : (_logger.debug(""), print("badum")) ,
