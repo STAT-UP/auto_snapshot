@@ -1,0 +1,91 @@
+schedules:
+  - name: yearly backup
+    prefix: yearly
+    cron:
+      month: 1
+      day: 1
+      hour: 2
+      minute: 12
+    retain: 1000
+    sources: 
+      - cephfs_projekte_2015
+      - cephfs_projekte_2016
+      - cephfs_projekte_2017
+      - cephfs_projekte_2018
+      - cephfs_projekte_2019
+      - website_wordpress
+  - name: monthly backup
+    prefix: monthly
+    cron:
+      day: 1
+      hour: 3
+      minute: 02
+    retain: 12
+    sources: 
+      - cephfs_projekte_2015
+      - cephfs_projekte_2016
+      - cephfs_projekte_2017
+      - cephfs_projekte_2018
+      - cephfs_projekte_2019
+      - website_wordpress
+  - name: daily backup
+    prefix: daily
+    cron:
+      hour: 1
+      minute: 17
+    retain: 32
+    sources: 
+      - cephfs_projekte_2015
+      - cephfs_projekte_2016
+      - cephfs_projekte_2017
+      - cephfs_projekte_2018
+      - cephfs_projekte_2019
+      - website_wordpress
+  - name: hourly backup
+    prefix: hourly
+    cron:
+      minute: 19
+    retain: 48
+    sources: 
+      - cephfs_projekte_2015
+      - cephfs_projekte_2016
+      - cephfs_projekte_2017
+      - cephfs_projekte_2018
+      - cephfs_projekte_2019
+      - website_wordpress
+  - name: every 15 minutes
+    prefix: frequently
+    cron:
+      minute: "*/15"
+    retain: 4
+    sources: 
+      - cephfs_projekte_2015
+      - cephfs_projekte_2016
+      - cephfs_projekte_2017
+      - cephfs_projekte_2018
+      - cephfs_projekte_2019
+sources:
+  website_wordpress:
+    name: the wordpress installation for stat-up.com
+    type: rbd
+    location: replicapool/statup-wordpress
+  cephfs_projekte_2015:
+    name: projects on cephfs
+    type: cephfs
+    location: /cephfs/Projekte/2015
+  cephfs_projekte_2016:
+    name: projects on cephfs
+    type: cephfs
+    location: /cephfs/Projekte/2016
+  cephfs_projekte_2017:
+    name: projects on cephfs
+    type: cephfs
+    location: /cephfs/Projekte/2017
+  cephfs_projekte_2018:
+    name: projects on cephfs
+    type: cephfs
+    location: /cephfs/Projekte/2018
+  cephfs_projekte_2019:
+    name: projects on cephfs
+    type: cephfs
+    location: /cephfs/Projekte/2019

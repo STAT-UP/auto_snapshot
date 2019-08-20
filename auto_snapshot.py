@@ -6,30 +6,51 @@ Created on Tue Aug 13 11:33:46 2019
 @author: Stefan Fritsch
 """
 
-# import os
-# import re
-# import datetime
-# import subprocess
-
+import os
+import logging
 import yaml
 import apscheduler.schedulers.blocking
 import apscheduler.triggers.cron
 
 from cephfs import cephfs_create_snapshot, cephfs_list_snapshots, cephfs_delete_old_snapshots
 from rbd import rbd_create_snapshot, rbd_list_snapshots, rbd_delete_old_snapshots
-from debug import debug_title, debug_heartbeat
 
+from argparse import ArgumentParser
 
-def cronjob(_source, _prefix, _retain):
+parser = ArgumentParser(description = "Create regular snapshots of volumes.")
+parser.add_argument("--heartbeat",
+                    help = "Print a regular heartbeat as a debug message every minute",
+                    action = "store_const",
+                    dest = "heartbeat",
+                    const = True,
+                    default = False)
+parser.add_argument("-l", "--log-level",
+                    help = "What severity of events should be locked. Can be one of DEBUG, INFO, WARN, ERROR, CRITICAL",
+                    dest = "log_level",
+                    default = "INFO",
+                    type = str)
+
+args = parser.parse_args()
+
+def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
     location = _source["location"]
     source_type = _source["type"]
+    
+    logger = logging.getLogger("[_prefix][_source]")
+    logger.setLevel(getattr(logging, args.log_level))
+    
     create_snapshot = globals()[source_type + "_create_snapshot"]
+    mount_newest_snapshot = globals()[source_type + "_mount_newest_snapshot"]
     delete_old_snapshots = globals()[source_type + "_delete_old_snapshots"]
     
-    create_snapshot(location, _prefix)
-    
-    delete_old_snapshots(location, _prefix, _retain)
+    create_snapshot(location, _prefix, _logger = logger)
+    mount_newest_snapshot(location, _prefix, _mount_location, _logger = logger)
+    delete_old_snapshots(location, _prefix, _retain, _logger = logger)
 
+## The logger
+with open('logging.config.yaml', 'r') as f:
+    logging_config = yaml.safe_load(f.read())
+    logging.config.dictConfig(logging_config)
 
 with open("config.yaml", 'r') as stream:
     try:
@@ -43,24 +64,30 @@ source_definitions = config["sources"]
 
 scheduler = apscheduler.schedulers.blocking.BlockingScheduler()
 
-for schedule in schedules:
+for schedule_name, schedule in schedules.items():
     sources = schedule["sources"]
+    mount_newest = schedule.get('mount_newest', False)
     
-    for source in sources:
+    for source_name in sources:
         trigger = apscheduler.triggers.cron.CronTrigger(**(schedule["cron"]))
         
         scheduler.add_job(cronjob,
                           trigger,
                           kwargs = {
-                              "_source": source_definitions[source],
-                              "_prefix": schedule["prefix"],
-                              "_retain": schedule["retain"]
+                              "_source": source_definitions[source_name],
+                              "_prefix": schedule_name,
+                              "_retain": schedule["retain"],
+                              "_mount_newest": mount_newest,
+                              "_mount_location": os.path.join("/mnt_backup", source_name, schedule_name)
                           })
 
 
-trigger = apscheduler.triggers.cron.CronTrigger(second = 1)
-scheduler.add_job(debug_heartbeat,
-                  trigger)
+if args.heartbeat:
+    trigger = apscheduler.triggers.cron.CronTrigger(second = 1)
+    
+    scheduler.add_job(lambda _logger : _logger.debug("") ,
+                    trigger,
+                    kwargs = {"_logger": logging.getLogger(" Heartbeat ")})
 
 scheduler.start()
     
