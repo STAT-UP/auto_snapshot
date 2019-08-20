@@ -9,7 +9,11 @@ handlers:
     formatter: simple
     stream: ext://sys.stdout
 loggers:
-  sampleLogger:
+  MainLogger:
+    level: DEBUG
+    handlers: [stdout]
+    propagate: no
+  HeartbeatLogger:
     level: DEBUG
     handlers: [stdout]
     propagate: no

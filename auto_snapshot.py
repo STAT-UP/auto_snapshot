@@ -8,12 +8,13 @@ Created on Tue Aug 13 11:33:46 2019
 
 import os
 import logging
+import logging.config
 import yaml
 import apscheduler.schedulers.blocking
 import apscheduler.triggers.cron
 
-from cephfs import cephfs_create_snapshot, cephfs_list_snapshots, cephfs_delete_old_snapshots
-from rbd import rbd_create_snapshot, rbd_list_snapshots, rbd_delete_old_snapshots
+from cephfs import cephfs_create_snapshot, cephfs_list_snapshots, cephfs_delete_old_snapshots, cephfs_mount_newest_snapshot
+from rbd import rbd_create_snapshot, rbd_list_snapshots, rbd_delete_old_snapshots, rbd_mount_newest_snapshot
 
 from argparse import ArgumentParser
 
@@ -41,8 +42,7 @@ def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
     location = _source["location"]
     source_type = _source["type"]
     
-    logger = logging.getLogger("[_prefix][_source]")
-    logger.setLevel(getattr(logging, args.log_level))
+    logger = main_logger.getLogger("[_prefix][_source]")
     
     create_snapshot = globals()[source_type + "_create_snapshot"]
     mount_newest_snapshot = globals()[source_type + "_mount_newest_snapshot"]
@@ -59,6 +59,8 @@ def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
 with open('logging.config.yaml', 'r') as f:
     logging_config = yaml.safe_load(f.read())
     logging.config.dictConfig(logging_config)
+main_logger = logging.getLogger("MainLogger")
+main_logger.setLevel(getattr(logging, args.log_level))
 
 with open(args.config_file, 'r') as stream:
     try:
@@ -92,10 +94,12 @@ for schedule_name, schedule in schedules.items():
 
 if args.heartbeat:
     trigger = apscheduler.triggers.cron.CronTrigger(second = 1)
-    
-    scheduler.add_job(lambda _logger : _logger.debug("") ,
+    beat_logger = logging.getLogger("HeartbeatLogger")
+
+    print("beating")
+    scheduler.add_job(lambda _logger : (_logger.debug(""), print("badum")) ,
                     trigger,
-                    kwargs = {"_logger": logging.getLogger(" Heartbeat ")})
+                    kwargs = {"_logger": beat_logger})
 
 scheduler.start()
     
