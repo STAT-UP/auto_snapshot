@@ -1,6 +1,6 @@
 schedules:
-  - name: yearly backup
-    prefix: yearly
+  yearly:
+    name: yearly backup
     cron:
       month: 1
       day: 1
@@ -14,8 +14,9 @@ schedules:
       - cephfs_projekte_2018
       - cephfs_projekte_2019
       - website_wordpress
-  - name: monthly backup
-    prefix: monthly
+      - website_db
+  monthly:
+    name: monthly backup
     cron:
       day: 1
       hour: 3
@@ -28,12 +29,14 @@ schedules:
       - cephfs_projekte_2018
       - cephfs_projekte_2019
       - website_wordpress
-  - name: daily backup
-    prefix: daily
+      - website_db
+  daily:
+    name: daily backup
     cron:
       hour: 1
       minute: 17
     retain: 32
+    mount_newest: true
     sources: 
       - cephfs_projekte_2015
       - cephfs_projekte_2016
@@ -41,8 +44,9 @@ schedules:
       - cephfs_projekte_2018
       - cephfs_projekte_2019
       - website_wordpress
-  - name: hourly backup
-    prefix: hourly
+      - website_db
+  hourly:
+    name: hourly backup
     cron:
       minute: 19
     retain: 48
@@ -53,8 +57,9 @@ schedules:
       - cephfs_projekte_2018
       - cephfs_projekte_2019
       - website_wordpress
-  - name: every 15 minutes
-    prefix: frequently
+      - website_db
+  frequently:
+    name: every 15 minutes
     cron:
       minute: "*/15"
     retain: 4
@@ -69,6 +74,10 @@ sources:
     name: the wordpress installation for stat-up.com
     type: rbd
     location: replicapool/statup-wordpress
+  website_db:
+    name: the database for the wordpress installation for stat-up.com
+    type: rbd
+    location: replicapool/pvc-1af50a83-bde0-11e9-ab46-50465d9e24dd
   cephfs_projekte_2015:
     name: projects on cephfs
     type: cephfs
@@ -89,3 +98,20 @@ sources:
     name: projects on cephfs
     type: cephfs
     location: /cephfs/Projekte/2019
+transfers:
+  dino:
+    name: rsync everything to dino
+    server: shin-0.servers.statup.company
+    port: 32522
+    user: ceph.backup
+    snapshot_prefix: daily
+    local_path: /mnt/ceph_backup
+    sources: 
+      - cephfs_projekte_2015
+      - cephfs_projekte_2016
+      - cephfs_projekte_2017
+      - cephfs_projekte_2018
+      - cephfs_projekte_2019
+    cron:
+      hour: 3
+      minute: 17
