@@ -72,6 +72,9 @@ formatter = logging.Formatter('[%(asctime)s][%(levelname)s]%(name)s %(message)s'
 stdout_handler = logging.StreamHandler(stdout)
 stdout_handler.setFormatter(formatter)
 
+main_logger = logging.getLogger("[Main]")
+main_logger.addHandler(stdout_handler)
+main_logger.setLevel(args.log_level)
 
 ##### The config #####
 
@@ -79,7 +82,7 @@ with open(args.config_file, 'r') as stream:
     try:
         config = yaml.safe_load(stream)
     except yaml.YAMLError as exc:
-        print(exc)
+        main_logger.error(exc)
 
 
 ##### Set the schedules #####
