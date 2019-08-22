@@ -46,17 +46,6 @@ parser.add_argument("-s", "--source",
 args = parser.parse_args()
 
 
-##### Functions #####
-
-def mount_newest_snapshot(_source_name, _schedule_name, _logger = main_logger):
-    source = sources[_source_name]
-    location = source["location"]
-    mount_location = os.path.join("/mnt_backup", _source_name, _schedule_name)
-    
-    mount_newest_snapshot_type = globals()[source["type"] + "_mount_newest_snapshot"]
-    
-    mount_newest_snapshot_type(location, _schedule_name, mount_location, _logger)
-
 
 ##### The logger #####
 
@@ -76,8 +65,19 @@ with open(args.config_file, 'r') as stream:
     except yaml.YAMLError as exc:
         main_logger.error(exc)
 
+##### Functions #####
 
-##### Set the schedules #####
+def mount_newest_snapshot(_source_name, _schedule_name, _logger = main_logger):
+    source = sources[_source_name]
+    location = source["location"]
+    mount_location = os.path.join("/mnt_backup", _source_name, _schedule_name)
+    
+    mount_newest_snapshot_type = globals()[source["type"] + "_mount_newest_snapshot"]
+    
+    mount_newest_snapshot_type(location, _schedule_name, mount_location, _logger)
+
+
+##### execute #####
 
 sources = config["sources"]
 mount_newest_snapshot(args.source, args.schedule)
