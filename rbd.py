@@ -68,9 +68,9 @@ def rbd_mount_newest_snapshot(_location, _prefix, _mount_location, _logger):
     snaps = rbd_list_snapshots(_location, _prefix)
     newest_snapshot = sorted(snaps, reverse = True)[0]
     
-    result = rbd_unmount_snapshot(_location, newest_snapshot, _mount_location)
+    result = rbd_unmount_snapshot(_location, newest_snapshot, _mount_location, _logger)
     if result:
-        result += rbd_mount_snapshot(_location, newest_snapshot, _mount_location)
+        result += rbd_mount_snapshot(_location, newest_snapshot, _mount_location, _logger)
     else:
         _logger.warn(f"rbd_mount_newest_snapshot: Lock on {_mount_location}")
     
@@ -79,26 +79,30 @@ def rbd_mount_newest_snapshot(_location, _prefix, _mount_location, _logger):
     
     return result
 
-def rbd_mount_snapshot(_location, _newest_snapshot, _mount_location):
+def rbd_mount_snapshot(_location, _newest_snapshot, _mount_location, _logger):
     
     lock_file = _mount_location + ".lock"
     if os.path.exists(lock_file):
         return False
     
     ## protect snap
+    _logger.debug(f'[Mount] Protecting {_location}@{_newest_snapshot}')
     command = f'rbd snap protect {_location}@{_newest_snapshot}'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## clone snap
+    _logger.debug(f'[Mount] Cloning {_location}@{_newest_snapshot} into {_location}_backup')
     command = f'rbd clone {_location}@{_newest_snapshot} {_location}_backup'
     newest_snap_cmd = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## map clone
+    _logger.debug(f'[Mount] Mapping {_location}_backup')
     command = f'rbd map {_location}_backup'
     newest_snap_cmd = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).stdout.read()
     newest_snap_device = newest_snap_cmd.decode("utf-8").strip()
     
     ## mount clone
+    _logger.debug(f'[Mount] Mounting {_mount_location}')
     os.makedirs(_mount_location, exist_ok = True)
     command = f'mount {newest_snap_device} {_mount_location}'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
@@ -106,25 +110,30 @@ def rbd_mount_snapshot(_location, _newest_snapshot, _mount_location):
     return True
 
 
-def rbd_unmount_snapshot(_location, _newest_snapshot, _mount_location):
+def rbd_unmount_snapshot(_location, _newest_snapshot, _mount_location, _logger):
     
     lock_file = _mount_location + ".lock"
     if os.path.exists(lock_file):
+        _logger.info(f"{_mount_location} is locked. If this is an error remove {_mount_location}.lock")
         return False
     
     ## unmount clone
+    _logger.debug(f'[Unmount] Unmounting {_mount_location}')
     command = f'umount {_mount_location}'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## unmap clone
+    _logger.debug(f'[Unmount] Unmapping {_location}_backup')
     command = f'rbd unmap {_location}_backup'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## delete clone
+    _logger.debug(f'[Unmount] Deleting {_location}_backup')
     command = f'rbd rm {_location}_backup'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## unprotect snap
+    _logger.debug(f'[Unmount] Unprotecting {_location}@{_newest_snapshot}')
     command = f'rbd snap unprotect {_location}@{_newest_snapshot}'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
 

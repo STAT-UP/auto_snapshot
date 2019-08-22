@@ -25,7 +25,7 @@ parser = ArgumentParser(description = "Create regular snapshots of volumes.")
 parser.add_argument("-l", "--log-level",
                     help = "What severity of events should be locked. Can be one of DEBUG, INFO, WARN, ERROR, CRITICAL",
                     dest = "log_level",
-                    default = "INFO",
+                    default = "DEBUG",
                     type = str)
 parser.add_argument("-c", "--config-file",
                     help = "Where to look for the config yaml?",
