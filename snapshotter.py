@@ -124,7 +124,6 @@ def unmount_snapshot(_source_name, _prefix, _logger = main_logger):
         raise Exception("Unknown type in source")
 
 def unmount_dir(_mount_location, _type = "rbd", _pool = "replicapool", _logger = main_logger):
-
     if _type == "cephfs":
         cephfs_unmount_snapshot(_mount_location, _logger)
     elif _type == "rbd":
