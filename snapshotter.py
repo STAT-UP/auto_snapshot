@@ -22,11 +22,9 @@ from sys import stdout
 ##### Parse command line #####
 
 parser = ArgumentParser(description = "Manipulate snapshots")
-parser.add_argument("command",
-                    help = "One of create, mount_newest, mount and unmount",
+parser.add_argument(help = "One of create, mount_newest, mount and unmount",
                     dest = "command",
                     choices = ["create", "mount_newest", "mount", "unmount"],
-                    required = True,
                     type = str)
 parser.add_argument("-l", "--log-level",
                     help = "What severity of events should be logged. Can be one of DEBUG, INFO, WARN, ERROR, CRITICAL",
