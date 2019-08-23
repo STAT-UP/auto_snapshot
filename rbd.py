@@ -2,7 +2,6 @@ import os
 import re
 import datetime
 import subprocess
-import pdb
 
 def rbd_create_snapshot(_location, _prefix, _logger):
     _logger.info("rbd_create_snapshot: Creating snapshot")
@@ -69,8 +68,7 @@ def rbd_mount_newest_snapshot(_location, _prefix, _mount_location, _logger):
 
     snaps = rbd_list_snapshots(_location, _prefix)
     newest_snapshot = sorted(snaps, reverse = True)[0]
-    pool = _location.split("/")[1]
-    pdb.set_trace()
+    pool = _location.split("/")[0]
     result = rbd_unmount_snapshot(_mount_location, pool, _logger = _logger)
 
     if result:
