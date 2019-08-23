@@ -130,9 +130,10 @@ def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
                       for f in mounted_devs
                       if re.search(fr'\s{_mount_location}\s', f)]
     
-    
+    if len(our_dev_string) == 0:
+        return "Not mounted"
 
-    if len(our_dev_string) != 1:
+    if len(our_dev_string) > 1:
         raise Exception(f"{_mount_location} should appear exactly once in mount output")
     
     our_dev = re.search(fr'(/dev/[^\s]+)', our_dev_string[0]).group(0)
@@ -184,6 +185,10 @@ def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
 
 def rbd_unmount_snapshot(_mount_location, _pool, _logger):
     info = rbd_get_mount_info(_mount_location, _logger, _pool = _pool)
+
+    if info == "Not mounted":
+        _logger.info(f"{_mount_location} not mounted")
+        return True
 
     lock_file = _mount_location + ".lock"
     if os.path.exists(lock_file):

@@ -97,6 +97,10 @@ def cephfs_unmount_snapshot(_mount_location, _logger):
     if os.path.exists(lock_file):
         return False
     
-    os.remove(_mount_location)
-    
+    try:
+        os.remove(_mount_location)
+    except FileNotFoundError:
+        _logger.info(f"{_mount_location} not mounted")
+        return True
+
     return True
