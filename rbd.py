@@ -70,6 +70,7 @@ def rbd_mount_newest_snapshot(_location, _prefix, _mount_location, _logger):
     snaps = rbd_list_snapshots(_location, _prefix)
     newest_snapshot = sorted(snaps, reverse = True)[0]
     pool = _location.split("/")[1]
+    pdb.set_trace()
     result = rbd_unmount_snapshot(_mount_location, pool, _logger = _logger)
 
     if result:
@@ -184,7 +185,6 @@ def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
 
 
 def rbd_unmount_snapshot(_mount_location, _pool, _logger):
-    pdb.set_trace()
     info = rbd_get_mount_info(_mount_location, _logger, _pool = _pool)
 
     lock_file = _mount_location + ".lock"
