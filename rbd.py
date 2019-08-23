@@ -197,12 +197,12 @@ def rbd_unmount_snapshot(_mount_location, _pool, _logger):
     
     ## unmap clone
     _logger.debug(f'[Unmount] Unmapping {info["image"]}')
-    command = f'rbd unmap {info["image"]}'
+    command = f'rbd unmap {info["pool"]}/{info["image"]}'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## delete clone
     _logger.debug(f'[Unmount] Deleting {info["image"]}')
-    command = f'rbd rm {info["image"]}'
+    command = f'rbd rm {info["pool"]}/{info["image"]}'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## unprotect snap
