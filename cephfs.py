@@ -66,11 +66,10 @@ def cephfs_mount_newest_snapshot(_location, _prefix, _mount_location, _logger):
     
     snaps = cephfs_list_snapshots(_location, _prefix)
     newest_snapshot = sorted(snaps, reverse = True)[0]
-    snapshot_path = os.path.join(_location, ".snap", newest_snapshot)
-    
-    result = cephfs_unmount_snapshot(snapshot_path, _mount_location, _logger)
+
+    result = cephfs_unmount_snapshot(_mount_location, _logger)
     if result:
-        result += cephfs_mount_snapshot(snapshot_path, _mount_location, _logger)
+        result += cephfs_mount_snapshot(_location, newest_snapshot, _mount_location, _logger)
     else:
         _logger.warn(f"cephfs_mount_newest_snapshot: Lock on {_mount_location}")
     
@@ -79,17 +78,20 @@ def cephfs_mount_newest_snapshot(_location, _prefix, _mount_location, _logger):
 
     return result
 
-def cephfs_mount_snapshot(_snapshot_path, _mount_location, _logger):
+
+def cephfs_mount_snapshot(_location, _snapshot, _mount_location, _logger):
+    snapshot_path = os.path.join(_location, ".snap", _snapshot)
     lock_file = _mount_location + ".lock"
     
     if os.path.exists(lock_file):
         return False
     
-    os.symlink(_snapshot_path, _mount_location)
+    os.symlink(snapshot_path, _mount_location)
     
     return True
 
-def cephfs_unmount_snapshot(_snapshot_path, _mount_location, _logger):
+
+def cephfs_unmount_snapshot(_mount_location, _logger):
     lock_file = _mount_location + ".lock"
     
     if os.path.exists(lock_file):

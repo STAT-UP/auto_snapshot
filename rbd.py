@@ -62,13 +62,15 @@ def rbd_delete_old_snapshots(_location, _prefix, _n_retain, _logger):
         else:
             _logger.debug("Successfully deleted snapshot %s " % snap)
 
+
 def rbd_mount_newest_snapshot(_location, _prefix, _mount_location, _logger):
     _logger.info("rbd_mount_newest_snapshot: Mounting snapshots")
 
     snaps = rbd_list_snapshots(_location, _prefix)
     newest_snapshot = sorted(snaps, reverse = True)[0]
-    
-    result = rbd_unmount_snapshot(_location, newest_snapshot, _mount_location, _logger)
+    pool = _location.split("/")[1]
+    result = rbd_unmount_snapshot(_mount_location, pool, _logger = _logger)
+
     if result:
         result += rbd_mount_snapshot(_location, newest_snapshot, _mount_location, _logger)
     else:
@@ -79,20 +81,21 @@ def rbd_mount_newest_snapshot(_location, _prefix, _mount_location, _logger):
     
     return result
 
-def rbd_mount_snapshot(_location, _newest_snapshot, _mount_location, _logger):
+
+def rbd_mount_snapshot(_location, _snapshot, _mount_location, _logger):
     
     lock_file = _mount_location + ".lock"
     if os.path.exists(lock_file):
         return False
     
     ## protect snap
-    _logger.debug(f'[Mount] Protecting {_location}@{_newest_snapshot}')
-    command = f'rbd snap protect {_location}@{_newest_snapshot}'
+    _logger.debug(f'[Mount] Protecting {_location}@{_snapshot}')
+    command = f'rbd snap protect {_location}@{_snapshot}'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## clone snap
-    _logger.debug(f'[Mount] Cloning {_location}@{_newest_snapshot} into {_location}_backup')
-    command = f'rbd clone {_location}@{_newest_snapshot} {_location}_backup'
+    _logger.debug(f'[Mount] Cloning {_location}@{_snapshot} into {_location}_backup')
+    command = f'rbd clone {_location}@{_snapshot} {_location}_backup'
     newest_snap_cmd = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## map clone
@@ -110,8 +113,79 @@ def rbd_mount_snapshot(_location, _newest_snapshot, _mount_location, _logger):
     return True
 
 
-def rbd_unmount_snapshot(_location, _newest_snapshot, _mount_location, _logger):
+def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
     
+    _logger.debug(f'[Unmount] Find device of {_mount_location}')
+
+    our_dev = None
+
+    mounted_devs = subprocess.Popen(f'mount', 
+                                    shell = True, 
+                                    stdout = subprocess.PIPE) \
+                        .stdout \
+                        .read() \
+                        .decode("utf-8") \
+                        .split("\n")
+    our_dev_string = [f 
+                      for f in mounted_devs
+                      if re.search(fr'\s{_mount_location}\s', f)]
+    
+    
+
+    if len(our_dev_string) != 1:
+        raise Exception(f"{_mount_location} should appear exactly once in mount output")
+    
+    our_dev = re.search(fr'(/dev/[^\s]+)', our_dev_string[0]).group(0)
+    
+    
+    showmapped_output = \
+        subprocess \
+            .Popen(f'rbd showmapped', 
+                shell = True, 
+                stdout = subprocess.PIPE) \
+            .stdout \
+            .read() \
+            .decode("utf-8") \
+            .split("\n")
+    our_showmapped_string = [f 
+                            for f in showmapped_output
+                            if re.search(fr'{our_dev}', f)]
+    
+    if len(our_showmapped_string) != 1:
+        raise Exception(f"{our_dev} should appear exactly once in rbd showmapped")
+    
+    our_image = re.search(fr'([\S]+)\s+[\S]+\s+{our_dev}', our_showmapped_string[0]).group(1)
+    
+    our_ls_output = \
+        subprocess \
+            .Popen(f'rbd ls -l {_pool}', 
+                    shell = True, 
+                    stdout = subprocess.PIPE) \
+            .stdout \
+            .read() \
+            .decode("utf-8") \
+            .split("\n")
+    
+    our_ls_string = [f 
+                    for f in our_ls_output
+                    if re.search(fr'^{our_image}', f)]
+    
+    if len(our_ls_string) != 1:
+        raise Exception(f"{our_dev} should appear exactly once in rbd ls -l")
+    
+    our_parent = re.split(r'\s+', our_ls_string[0])[3]
+        
+    return {"mount_location": _mount_location,
+            "device": our_dev, 
+            "image": our_image, 
+            "pool": _pool, 
+            "parent": our_parent}
+
+
+def rbd_unmount_snapshot(_mount_location, _pool, _logger):
+    
+    info = rbd_get_mount_info(_mount_location, _logger, _pool = _pool)
+
     lock_file = _mount_location + ".lock"
     if os.path.exists(lock_file):
         _logger.info(f"{_mount_location} is locked. If this is an error remove {_mount_location}.lock")
@@ -123,18 +197,18 @@ def rbd_unmount_snapshot(_location, _newest_snapshot, _mount_location, _logger):
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## unmap clone
-    _logger.debug(f'[Unmount] Unmapping {_location}_backup')
-    command = f'rbd unmap {_location}_backup'
+    _logger.debug(f'[Unmount] Unmapping {info["image"]}')
+    command = f'rbd unmap {info["image"]}'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## delete clone
-    _logger.debug(f'[Unmount] Deleting {_location}_backup')
-    command = f'rbd rm {_location}_backup'
+    _logger.debug(f'[Unmount] Deleting {info["image"]}')
+    command = f'rbd rm {info["image"]}'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## unprotect snap
-    _logger.debug(f'[Unmount] Unprotecting {_location}@{_newest_snapshot}')
-    command = f'rbd snap unprotect {_location}@{_newest_snapshot}'
+    _logger.debug(f'[Unmount] Unprotecting {info["parent"]}')
+    command = f'rbd snap unprotect {info["parent"]}'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
 
     return True
