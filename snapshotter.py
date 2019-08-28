@@ -120,10 +120,14 @@ def create_snapshot(_source_name, _prefix, _logger = main_logger):
 def mount_snapshot(_source_name, _prefix, _snapshot, _logger = main_logger):
     source = sources[_source_name]
     location = source["location"]
+    
+    mount_parent = os.path.join("/mnt_backup", _source_name)
+    if not os.path.exists(mount_parent):
+        os.makedirs(mount_parent)
+    
     mount_location = os.path.join("/mnt_backup", _source_name, _prefix)
     
     type_mount_snapshot = globals()[source["type"] + "_mount_snapshot"]
-    
     type_mount_snapshot(location, _prefix, _snapshot, mount_location, _logger)
 
 def unmount_snapshot(_source_name, _prefix, _logger = main_logger):
