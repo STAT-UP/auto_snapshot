@@ -79,7 +79,7 @@ def rbd_mount_newest_snapshot(_location, _prefix, _mount_location, _logger):
     
     if result == 1:
         _logger.warn(f"rbd_mount_newest_snapshot: Mounting failed for {_mount_location}")
-    _logger.info(f"Mounting. Result is {result}")
+    
     return result
 
 

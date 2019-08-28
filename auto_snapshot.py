@@ -9,6 +9,7 @@ Created on Tue Aug 13 11:33:46 2019
 ##### Imports #####
 
 import os
+import sys
 import logging
 import logging.config
 import yaml
@@ -85,6 +86,12 @@ main_logger = logging.getLogger("[Main]")
 main_logger.addHandler(stdout_handler)
 main_logger.addHandler(file_handler)
 main_logger.setLevel(args.log_level)
+
+def exception_handler(type, value, tb):
+    main_logger.exception("Uncaught exception: {0}".format(str(value)))
+
+# Install exception handler
+sys.excepthook = exception_handler
 
 ##### The config #####
 
