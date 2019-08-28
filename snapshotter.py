@@ -104,6 +104,11 @@ with open(args.config_file, 'r') as stream:
 def mount_newest_snapshot(_source_name, _prefix, _logger = main_logger):
     source = sources[_source_name]
     location = source["location"]
+    
+    mount_parent = os.path.join("/mnt_backup", _source_name)
+    if not os.path.exists(mount_parent):
+        os.makedirs(mount_parent)
+    
     mount_location = os.path.join("/mnt_backup", _source_name, _prefix)
     
     type_mount_newest_snapshot = globals()[source["type"] + "_mount_newest_snapshot"]
