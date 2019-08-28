@@ -23,7 +23,7 @@ from sys import stdout
 ##### Parse command line #####
 
 parser = ArgumentParser(description = "Manipulate snapshots")
-parser.add_argument(help = "One of create, mount_newest, mount and unmount",
+parser.add_argument(help = "One of create, mount_newest, mount, unmount and unmount_rbd",
                     dest = "command",
                     choices = ["create", "mount_newest", "mount", "unmount"],
                     type = str)
@@ -156,6 +156,8 @@ elif args.command == "create":
 elif args.command == "mount":
     mount_snapshot(args.source, args.prefix, args.snapshot)
 elif args.command == "unmount":
-    unmount_snapshot(args.mount_dir, args.pool)
+    unmount_snapshot(args.source, args.pool)
+elif args.command == "unmount_rbd":
+    unmount_dir(args.mount_dir, _type = "rbd", _pool = args.pool)
 else:
     raise Exception("Unknown command")
