@@ -133,7 +133,7 @@ def unmount_snapshot(_source_name, _prefix, _logger = main_logger):
     if source["type"] == "cephfs":
         cephfs_unmount_snapshot(mount_location, _logger)
     elif source["type"] == "rbd":
-        pool = source["location"].split("/")[1]
+        pool = source["location"].split("/")[0]
         rbd_unmount_snapshot(_mount_location = mount_location, _pool = pool, _logger = _logger)
     else:
         raise Exception("Unknown type in source")

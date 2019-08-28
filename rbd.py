@@ -188,7 +188,7 @@ def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
             .read() \
             .decode("utf-8") \
             .split("\n")
-    _logger.debug(f'[Unmount][mount_info] Our ls output: {our_ls_output}')
+
     our_ls_string = [f 
                     for f in our_ls_output
                     if re.search(fr'^{our_image}', f)]
