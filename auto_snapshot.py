@@ -40,6 +40,12 @@ parser.add_argument("-c", "--config-file",
                     dest = "config_file",
                     default = "config.yaml",
                     type = str)
+parser.add_argument("--log-file",
+                    help = "Where to write logs?",
+                    dest = "log_file",
+                    default = "./auto_snapshot.log",
+                    type = str)
+
 
 args = parser.parse_args()
 
@@ -52,6 +58,7 @@ def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
     
     logger = logging.getLogger(f"[{_prefix}][{location}]")
     logger.addHandler(stdout_handler)
+    logger.addHandler(file_handler)
     logger.setLevel(args.log_level)
     
     create_snapshot = globals()[source_type + "_create_snapshot"]
@@ -71,9 +78,12 @@ def cronjob(_source, _prefix, _retain, _mount_newest, _mount_location = ""):
 formatter = logging.Formatter('[%(asctime)s][%(levelname)s]%(name)s %(message)s')
 stdout_handler = logging.StreamHandler(stdout)
 stdout_handler.setFormatter(formatter)
+file_handler = logging.FileHandler(args.log_file)
+file_handler.setFormatter(formatter)
 
 main_logger = logging.getLogger("[Main]")
 main_logger.addHandler(stdout_handler)
+main_logger.addHandler(file_handler)
 main_logger.setLevel(args.log_level)
 
 ##### The config #####
@@ -116,6 +126,7 @@ if args.heartbeat:
     trigger = apscheduler.triggers.cron.CronTrigger(second = 1)
     beat_logger = logging.getLogger(" Heartbeat ")
     beat_logger.addHandler(stdout_handler)
+    beat_logger.addHandler(file_handler)
     beat_logger.setLevel("DEBUG")
 
     scheduler.add_job(lambda _logger : _logger.debug(""),

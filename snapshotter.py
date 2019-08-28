@@ -61,7 +61,11 @@ parser.add_argument("--pool",
                     dest = "pool",
                     default = "replicapool",
                     type = str)
-
+parser.add_argument("--log-file",
+                    help = "Where to write logs?",
+                    dest = "log_file",
+                    default = "./auto_snapshot.log",
+                    type = str)
 args = parser.parse_args()
 
 
@@ -71,9 +75,12 @@ args = parser.parse_args()
 formatter = logging.Formatter('[%(asctime)s][%(levelname)s]%(name)s %(message)s')
 stdout_handler = logging.StreamHandler(stdout)
 stdout_handler.setFormatter(formatter)
+file_handler = logging.FileHandler(args.log_file)
+file_handler.setFormatter(formatter)
 
 main_logger = logging.getLogger("[Main]")
 main_logger.addHandler(stdout_handler)
+main_logger.addHandler(file_handler)
 main_logger.setLevel(args.log_level)
 
 ##### The config #####
