@@ -72,13 +72,14 @@ def rbd_mount_newest_snapshot(_location, _prefix, _mount_location, _logger):
     result = rbd_unmount_snapshot(_mount_location, pool, _logger = _logger)
 
     if result:
+        _logger.info(f"rbd_mount_newest_snapshot: Mounting {_mount_location}")
         result += rbd_mount_snapshot(_location, newest_snapshot, _mount_location, _logger)
     else:
         _logger.warn(f"rbd_mount_newest_snapshot: Lock on {_mount_location}")
     
     if result == 1:
         _logger.warn(f"rbd_mount_newest_snapshot: Mounting failed for {_mount_location}")
-    
+    _logger.info(f"Mounting. Result is {result}")
     return result
 
 
