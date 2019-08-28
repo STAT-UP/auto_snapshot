@@ -107,8 +107,27 @@ def rbd_mount_snapshot(_location, _snapshot, _mount_location, _logger):
     
     ## mount clone
     _logger.debug(f'[Mount] Mounting {_mount_location}')
+
+    _logger.debug(f'[Mount] Check filesystem type')
+    
+    command = f'blkid {newest_snap_device}'
+    newest_snap_fs_string = \
+        subprocess.Popen(command, 
+                         shell = True, 
+                         stdout = subprocess.PIPE) \
+        .stdout \
+        .read() \
+        .decode("utf-8") \
+        .strip()
+    newest_snap_fs = re.search(fr'TYPE="([^"]+)"', newest_snap_fs_string).group(0)
+
+    if newest_snap_fs == "xfs":
+        mount_options = "-o nouuid"
+    else:
+        mount_options = ""
+    
     os.makedirs(_mount_location, exist_ok = True)
-    command = f'mount {newest_snap_device} {_mount_location}'
+    command = f'mount {mount_options} {newest_snap_device} {_mount_location}'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     return True
