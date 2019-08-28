@@ -134,7 +134,7 @@ def unmount_snapshot(_source_name, _prefix, _logger = main_logger):
         cephfs_unmount_snapshot(mount_location, _logger)
     elif source["type"] == "rbd":
         pool = source["location"].split("/")[1]
-        rbd_unmount_snapshot(mount_location, pool, _logger)
+        rbd_unmount_snapshot(_mount_location = mount_location, _pool = pool, _logger = _logger)
     else:
         raise Exception("Unknown type in source")
 
@@ -150,13 +150,13 @@ def unmount_dir(_mount_location, _type = "rbd", _pool = "replicapool", _logger =
 sources = config["sources"]
 
 if args.command == "mount_newest":
-    mount_newest_snapshot(args.source, args.prefix)
+    mount_newest_snapshot(_source_name = args.source, _prefix = args.prefix)
 elif args.command == "create":
-    create_snapshot(args.source, args.prefix)
+    create_snapshot(_source_name = args.source, _prefix = args.prefix)
 elif args.command == "mount":
-    mount_snapshot(args.source, args.prefix, args.snapshot)
+    mount_snapshot(_source_name = args.source, _prefix = args.prefix, _snapshot = args.snapshot)
 elif args.command == "unmount":
-    unmount_snapshot(args.source, args.pool)
+    unmount_snapshot(_source_name = args.source, _prefix = args.prefix)
 elif args.command == "unmount_rbd":
     unmount_dir(args.mount_dir, _type = "rbd", _pool = args.pool)
 else:
