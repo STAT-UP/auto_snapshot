@@ -119,7 +119,8 @@ def rbd_mount_snapshot(_location, _snapshot, _mount_location, _logger):
         .read() \
         .decode("utf-8") \
         .strip()
-    newest_snap_fs = re.search(fr'TYPE="([^"]+)"', newest_snap_fs_string).group(0)
+    newest_snap_fs = re.search(fr'TYPE="([^"]+)"', newest_snap_fs_string).group(1)
+    _logger.debug(f'[Mount] Filesystem blkid: {newest_snap_fs_string}; type: {newest_snap_fs}')
 
     if newest_snap_fs == "xfs":
         mount_options = "-o nouuid"
@@ -222,9 +223,23 @@ def rbd_unmount_snapshot(_mount_location, _pool, _logger):
     
     ## unmap clone
     _logger.debug(f'[Unmount] Unmapping {info["image"]}')
-    command = f'rbd unmap {info["pool"]}/{info["image"]}'
-    subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
-    
+    more_than_once = True
+    attempt = 1
+
+    while bool(more_than_once) and attempt <= 5:
+        command = f'rbd unmap {info["pool"]}/{info["image"]}'
+        result = \
+            subprocess \
+                .Popen(command, 
+                        shell = True, 
+                        stdout = subprocess.PIPE) \
+                .stdout \
+                .read() \
+                .decode("utf-8")
+        _logger.debug(f'[Unmount] Ran unmount with result {result}')
+        attempt += 1
+        more_than_once = re.search(fr'mapped more than once', result)
+
     ## delete clone
     _logger.debug(f'[Unmount] Deleting {info["image"]}')
     command = f'rbd rm {info["pool"]}/{info["image"]}'
