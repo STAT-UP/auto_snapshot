@@ -73,7 +73,7 @@ def rbd_mount_newest_snapshot(_location, _prefix, _mount_location, _logger):
 
     if result:
         _logger.info(f"rbd_mount_newest_snapshot: Mounting {_mount_location}")
-        result += rbd_mount_snapshot(_location, newest_snapshot, _mount_location, _logger)
+        result += rbd_mount_snapshot(_location, _prefix, newest_snapshot, _mount_location, _logger)
     else:
         _logger.warn(f"rbd_mount_newest_snapshot: Lock on {_mount_location}")
     
@@ -83,7 +83,7 @@ def rbd_mount_newest_snapshot(_location, _prefix, _mount_location, _logger):
     return result
 
 
-def rbd_mount_snapshot(_location, _snapshot, _mount_location, _logger):
+def rbd_mount_snapshot(_location, _prefix, _snapshot, _mount_location, _logger):
     
     lock_file = _mount_location + ".lock"
     if os.path.exists(lock_file):
@@ -95,13 +95,13 @@ def rbd_mount_snapshot(_location, _snapshot, _mount_location, _logger):
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## clone snap
-    _logger.debug(f'[Mount] Cloning {_location}@{_snapshot} into {_location}_backup')
-    command = f'rbd clone {_location}@{_snapshot} {_location}_backup'
+    _logger.debug(f'[Mount] Cloning {_location}@{_snapshot} into {_location}_{_prefix}_backup')
+    command = f'rbd clone {_location}@{_snapshot} {_location}_{_prefix}_backup'
     newest_snap_cmd = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
     ## map clone
-    _logger.debug(f'[Mount] Mapping {_location}_backup')
-    command = f'rbd map {_location}_backup'
+    _logger.debug(f'[Mount] Mapping {_location}v_backup')
+    command = f'rbd map {_location}_{_prefix}_backup'
     newest_snap_cmd = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).stdout.read()
     newest_snap_device = newest_snap_cmd.decode("utf-8").strip()
     

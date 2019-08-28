@@ -124,7 +124,7 @@ def mount_snapshot(_source_name, _prefix, _snapshot, _logger = main_logger):
     
     type_mount_snapshot = globals()[source["type"] + "_mount_snapshot"]
     
-    type_mount_snapshot(location, _snapshot, mount_location, _logger)
+    type_mount_snapshot(location, _prefix, _snapshot, mount_location, _logger)
 
 def unmount_snapshot(_source_name, _prefix, _logger = main_logger):
     source = sources[_source_name]
