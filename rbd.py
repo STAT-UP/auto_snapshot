@@ -193,7 +193,7 @@ def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
                     if re.search(fr'^{our_image}', f)]
     
     if len(our_ls_string) != 1:
-        raise Exception(f"{our_dev} should appear exactly once in rbd ls -l")
+        raise Exception(f"{our_image} should appear exactly once in rbd ls -l")
     
     our_parent = re.split(r'\s+', our_ls_string[0])[3]
         
