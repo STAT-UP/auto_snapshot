@@ -136,7 +136,7 @@ def rbd_mount_snapshot(_location, _prefix, _snapshot, _mount_location, _logger):
 
 def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
     
-    _logger.debug(f'[Unmount] Find device of {_mount_location}')
+    _logger.debug(f'[Unmount][mount_info] Find device of {_mount_location}')
 
     our_dev = None
 
@@ -158,7 +158,7 @@ def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
         raise Exception(f"{_mount_location} should appear exactly once in mount output")
     
     our_dev = re.search(fr'(/dev/[^\s]+)', our_dev_string[0]).group(0)
-    
+    _logger.debug(f'[Unmount][mount_info] our device: {our_dev}')
     
     showmapped_output = \
         subprocess \
@@ -177,7 +177,8 @@ def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
         raise Exception(f"{our_dev} should appear exactly once in rbd showmapped")
     
     our_image = re.search(fr'([\S]+)\s+[\S]+\s+{our_dev}', our_showmapped_string[0]).group(1)
-    
+    _logger.debug(f'[Unmount][mount_info] Our image: {our_image}')
+
     our_ls_output = \
         subprocess \
             .Popen(f'rbd ls -l {_pool}', 
@@ -187,7 +188,7 @@ def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
             .read() \
             .decode("utf-8") \
             .split("\n")
-    
+    _logger.debug(f'[Unmount][mount_info] Our ls output: {our_ls_output}')
     our_ls_string = [f 
                     for f in our_ls_output
                     if re.search(fr'^{our_image}', f)]
