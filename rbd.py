@@ -171,7 +171,9 @@ def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
             .split("\n")
     our_showmapped_string = [f 
                             for f in showmapped_output
-                            if re.search(fr'{our_dev}$', f)]
+                            if re.search(fr'{our_dev}[^0-9]', f)]
+
+    print(our_showmapped_string)
     
     if len(our_showmapped_string) != 1:
         raise Exception(f"{our_dev} should appear exactly once in rbd showmapped")
