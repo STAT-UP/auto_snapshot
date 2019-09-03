@@ -227,7 +227,7 @@ def rbd_remove_snapshot(_info, _logger):
             subprocess \
                 .Popen(command, 
                         shell = True, 
-                        stderr=subprocess.PIPE,
+                        stderr = subprocess.STDOUT,
                         stdout = subprocess.PIPE) \
                 .stdout \
                 .read() \
