@@ -228,7 +228,7 @@ def rbd_remove_snapshot(_info, _logger):
                 .Popen(command, 
                         shell = True, 
                         stdout = subprocess.PIPE) \
-                .stdout \
+                .stderr \
                 .read() \
                 .decode("utf-8")
         _logger.debug(f'[Unmount] Ran unmap with result {result}')
