@@ -25,7 +25,7 @@ from sys import stdout
 parser = ArgumentParser(description = "Manipulate snapshots")
 parser.add_argument(help = "One of create, mount_newest, mount, unmount and unmount_rbd",
                     dest = "command",
-                    choices = ["create", "mount_newest", "mount", "unmount"],
+                    choices = ["create", "mount_newest", "mount", "unmount", "unmount_rbd"],
                     type = str)
 parser.add_argument("-l", "--log-level",
                     help = "What severity of events should be logged. Can be one of DEBUG, INFO, WARN, ERROR, CRITICAL",
