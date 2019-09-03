@@ -15,7 +15,7 @@ import logging.config
 import yaml
 
 from cephfs import cephfs_create_snapshot, cephfs_list_snapshots, cephfs_delete_old_snapshots, cephfs_mount_newest_snapshot, cephfs_mount_snapshot, cephfs_unmount_snapshot
-from rbd import rbd_create_snapshot, rbd_list_snapshots, rbd_delete_old_snapshots, rbd_mount_newest_snapshot, rbd_mount_snapshot, rbd_unmount_snapshot
+from rbd import rbd_create_snapshot, rbd_list_snapshots, rbd_delete_old_snapshots, rbd_mount_newest_snapshot, rbd_mount_snapshot, rbd_unmount_snapshot, rbd_get_image_info, rbd_remove_snapshot
 
 from argparse import ArgumentParser
 from sys import stdout
@@ -23,9 +23,9 @@ from sys import stdout
 ##### Parse command line #####
 
 parser = ArgumentParser(description = "Manipulate snapshots")
-parser.add_argument(help = "One of create, mount_newest, mount, unmount and unmount_rbd",
+parser.add_argument(help = "One of create, mount_newest, mount, unmount and unmount_rbd, remove_rbd_snapshot",
                     dest = "command",
-                    choices = ["create", "mount_newest", "mount", "unmount", "unmount_rbd"],
+                    choices = ["create", "mount_newest", "mount", "unmount", "unmount_rbd", "remove_rbd_snapshot"],
                     type = str)
 parser.add_argument("-l", "--log-level",
                     help = "What severity of events should be logged. Can be one of DEBUG, INFO, WARN, ERROR, CRITICAL",
@@ -55,6 +55,11 @@ parser.add_argument("-t", "--snapshot",
 parser.add_argument("--mount-dir",
                     help = "The directory to unmount. Only used for unmount",
                     dest = "mount_dir",
+                    default = "",
+                    type = str)
+parser.add_argument("--device",
+                    help = "A mapped rbd device. Only used for remove_rbd_snapshot",
+                    dest = "device",
                     default = "",
                     type = str)
 parser.add_argument("--pool",
@@ -155,6 +160,10 @@ def unmount_dir(_mount_location, _type = "rbd", _pool = "replicapool", _logger =
     else:
         raise Exception("Unknown type passed to function")
 
+def remove_rbd_snapshot(_dev, _pool = "replicapool", _logger = main_logger):
+    info = rbd_get_image_info(_dev, _pool = _pool, _logger = _logger)
+    rbd_remove_snapshot(_info = info, _logger = _logger)
+
 ##### execute #####
 sources = config["sources"]
 
@@ -168,5 +177,7 @@ elif args.command == "unmount":
     unmount_snapshot(_source_name = args.source, _prefix = args.prefix)
 elif args.command == "unmount_rbd":
     unmount_dir(args.mount_dir, _type = "rbd", _pool = args.pool)
+elif args.command == "remove_rbd_snapshot":
+    remove_rbd_snapshot(_dev = args.device, _pool = args.pool)
 else:
     raise Exception("Unknown command")

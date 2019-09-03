@@ -134,8 +134,7 @@ def rbd_mount_snapshot(_location, _prefix, _snapshot, _mount_location, _logger):
     return True
 
 
-def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
-    
+def rbd_get_dev_info(_mount_location, _logger):
     _logger.debug(f'[Unmount][mount_info] Find device of {_mount_location}')
 
     our_dev = None
@@ -159,7 +158,11 @@ def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
     
     our_dev = re.search(fr'(/dev/[^\s]+)', our_dev_string[0]).group(0)
     _logger.debug(f'[Unmount][mount_info] our device: {our_dev}')
-    
+
+    return our_dev
+
+
+def rbd_get_image_info(_dev, _logger, _pool = "replicapool"):
     showmapped_output = \
         subprocess \
             .Popen(f'rbd showmapped', 
@@ -171,14 +174,12 @@ def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
             .split("\n")
     our_showmapped_string = [f 
                             for f in showmapped_output
-                            if re.search(fr'{our_dev}[^0-9]', f)]
-
-    print(our_showmapped_string)
+                            if re.search(fr'{_dev}[^0-9]', f)]
     
     if len(our_showmapped_string) != 1:
-        raise Exception(f"{our_dev} should appear exactly once in rbd showmapped")
+        raise Exception(f"{_dev} should appear exactly once in rbd showmapped")
     
-    our_image = re.search(fr'([\S]+)\s+[\S]+\s+{our_dev}', our_showmapped_string[0]).group(1)
+    our_image = re.search(fr'([\S]+)\s+[\S]+\s+{_dev}', our_showmapped_string[0]).group(1)
     _logger.debug(f'[Unmount][mount_info] Our image: {our_image}')
 
     our_ls_output = \
@@ -199,13 +200,52 @@ def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
         raise Exception(f"{our_image} should appear exactly once in rbd ls -l. Instead we get {our_ls_string}")
     
     our_parent = re.split(r'\s+', our_ls_string[0])[3]
-        
-    return {"mount_location": _mount_location,
-            "device": our_dev, 
+
+    return {"device": _dev, 
             "image": our_image, 
             "pool": _pool, 
             "parent": our_parent}
+        
 
+def rbd_get_mount_info(_mount_location, _logger, _pool = "replicapool"):
+    our_dev = rbd_get_dev_info(_mount_location, _logger)
+    image = rbd_get_image_info(our_dev, _logger, _pool)
+    image["mount_location"] = _mount_location
+
+    return image
+
+
+def rbd_remove_snapshot(_info, _logger):
+    ## unmap clone
+    _logger.debug(f'[Unmount] Unmapping {_info["image"]}')
+    more_than_once = True
+    attempt = 1
+
+    while bool(more_than_once) and attempt <= 500:
+        command = f'rbd unmap {_info["pool"]}/{_info["image"]}'
+        result = \
+            subprocess \
+                .Popen(command, 
+                        shell = True, 
+                        stdout = subprocess.PIPE) \
+                .stdout \
+                .read() \
+                .decode("utf-8")
+        _logger.debug(f'[Unmount] Ran unmap with result {result}')
+        attempt += 1
+        more_than_once = re.search(fr'mapped more than once', result)
+
+    ## delete clone
+    _logger.debug(f'[Unmount] Deleting {_info["image"]}')
+    command = f'rbd rm {_info["pool"]}/{_info["image"]}'
+    subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
+    
+    ## unprotect snap
+    _logger.debug(f'[Unmount] Unprotecting {_info["parent"]}')
+    command = f'rbd snap unprotect {_info["parent"]}'
+    subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
+
+    return True
 
 def rbd_unmount_snapshot(_mount_location, _pool, _logger):
     info = rbd_get_mount_info(_mount_location, _logger, _pool = _pool)
@@ -224,33 +264,7 @@ def rbd_unmount_snapshot(_mount_location, _pool, _logger):
     command = f'umount {_mount_location}'
     subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
     
-    ## unmap clone
-    _logger.debug(f'[Unmount] Unmapping {info["image"]}')
-    more_than_once = True
-    attempt = 1
-
-    while bool(more_than_once) and attempt <= 5:
-        command = f'rbd unmap {info["pool"]}/{info["image"]}'
-        result = \
-            subprocess \
-                .Popen(command, 
-                        shell = True, 
-                        stdout = subprocess.PIPE) \
-                .stdout \
-                .read() \
-                .decode("utf-8")
-        _logger.debug(f'[Unmount] Ran unmount with result {result}')
-        attempt += 1
-        more_than_once = re.search(fr'mapped more than once', result)
-
-    ## delete clone
-    _logger.debug(f'[Unmount] Deleting {info["image"]}')
-    command = f'rbd rm {info["pool"]}/{info["image"]}'
-    subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
-    
-    ## unprotect snap
-    _logger.debug(f'[Unmount] Unprotecting {info["parent"]}')
-    command = f'rbd snap unprotect {info["parent"]}'
-    subprocess.Popen(command, shell = True, stdout = subprocess.PIPE).wait()
+    rbd_remove_snapshot(_info = info, 
+                        _logger = _logger)
 
     return True
