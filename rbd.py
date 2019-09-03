@@ -234,6 +234,7 @@ def rbd_remove_snapshot(_info, _logger):
         _logger.debug(f'[Unmount] Ran unmap with result {result}')
         attempt += 1
         more_than_once = re.search(fr'mapped more than once', result)
+        _logger.debug(f"mounted more than once: {bool(more_than_once)} because result is {more_than_once}")
 
     ## delete clone
     _logger.debug(f'[Unmount] Deleting {_info["image"]}')
