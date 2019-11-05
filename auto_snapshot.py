@@ -115,6 +115,8 @@ for schedule_name, schedule in schedules.items():
     
     for source_name in sources:
         trigger = apscheduler.triggers.cron.CronTrigger(**(schedule["cron"]))
+
+        os.makedirs(os.path.join("/mnt_backup", source_name), exist_ok = True)
         
         scheduler.add_job(cronjob,
                           trigger,
